@@ -61,7 +61,7 @@ class CompanyController extends Controller
         $company->save();
 
         $this->upload_image($request, $company->id);
-        return response()->json(["status" => true, "message" => $company->name . " successfully created."]);
+        return response()->json(["status" => true, "message" => $company->name . " successfully created.", "data" => $company, "edit_url" => route("api.company.edit", $company->id)]);
     }
 
     /**
@@ -115,7 +115,7 @@ class CompanyController extends Controller
         $company->website   = $request->website;
         $company->address   = $request->address;
         $company->save();
-
+        $this->upload_image($request, $company->id);
         return response()->json(["status" => true, "message" => $company->name . " successfully updated."]);
     }
 
@@ -136,7 +136,7 @@ class CompanyController extends Controller
         if ($request->hasFile('image')) {
             $image      = $request->file('image');
             $fileName   = time() . '.' . $image->getClientOriginalExtension();
-            Storage::disk('public')->put($fileName, 'company/');
+            Storage::disk('public')->put($fileName, 'public/company/');
 
             $company        = Company::find($id);
             $company->image = $fileName;

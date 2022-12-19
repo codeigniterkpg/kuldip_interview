@@ -14,16 +14,20 @@
 <div class="container">
     <div class="row">
       <div class="col-md-12">
+
           <div class="card">
             <div class="card-header"><h3 class="card-title">Companies</h3></div>
             <div class="card-body">
                 <button class="btn btn-primary" id="new_company">Create new company</button>
+                <button class="btn btn-success" id="new_company_row"> + Add Row </button>
+                <br />
                 <div class="card">
                   <div class="card-header"><h3 class="card-title">Company List</h3></div>
                   <div class="card-body">
                       <div class="card">
                         <div class="card-body">
-                            <table class="table table-bordered">
+                            <div id="row_response"></div>
+                            <table class="table table-bordered" id="company-table">
                                 <thead>
                                   <tr>
                                     <th>Name</th>
@@ -40,7 +44,11 @@
                                             <tr>
                                               <td>{{ $company->name }}</td>
                                               <td>{{ $company->address }}</td>
-                                              <td>{{ $company->image }}</td>
+                                              <td>
+                                                @if(!empty($company->image))
+                                                    <img src="{{ url($company->image) }}" width="100px">
+                                                @endif
+                                              </td>
                                               <td>{{ $company->website }}</td>
                                               <td>{{ $company->email }}</td>
                                               <td>
@@ -133,6 +141,30 @@
             _modal.modal("show");
         });
 
+        $(document).on("click", "#new_company_row", function() {
+            var url = "{{ route('api.company.store')}}";
+            var _row =  `
+            <tr>
+              <td colspan="6">
+              <form class="company-form" action="${url}">
+              <table>
+                <tr>
+                <td width="16.66%"><input type="text" class="form-control" name="name" placeholder="Name"></td>
+                <td width="16.66%"><input type="text" class="form-control" name="address" placeholder="Address"></td>
+                <td width="16.66%"><input type="file" class="form-control-file" name="image" ></td>
+                <td width="16.66%"><input type="text" class="form-control" name="website" placeholder="Website"></td>
+                <td width="16.66%"><input type="email" class="form-control" name="email" placeholder="Email"></td>
+                <td width="16.66%"><button type="submit" class="btn btn-success">Save</button></td>
+                </tr>
+              </table>
+              </form>
+              </td>
+            </tr>
+            `;
+
+            $("#company-table").append(_row);
+        });
+
         $(document).on("click", ".delete", function() {
             var _this = $(this);
             if (confirm("Are you sure ?")) {
@@ -199,6 +231,50 @@
                             $error_sting += '<p class="text-danger">'+$error+'</p>';
                         });
                         $("#response").html("<div class='alert alert-sccess'>" + $error_sting + "</div>");
+                    }
+                }
+            });
+
+        });
+
+        $(document).on("submit", ".company-form", function(event) {
+            var _this = $(this);
+            event.preventDefault();
+            var url = $(this).attr('action');
+            $("#row_response").html();
+            $.ajax({
+                url: url,
+                method: 'POST',
+                data: new FormData(this),
+                dataType: 'JSON',
+                contentType: false,
+                cache: false,
+                processData: false,
+                success:function(response)
+                {
+                    if (response.status) {
+                        response.message && $("#row_response").html("<div class='text-sccess'>" + response.message + "</div>");
+                        var _html = `
+                          <td>${response.data.name}</td>
+                          <td>${response.data.address}</td>
+                          <td>${response.data.image}</td>
+                          <td>${response.data.website}</td>
+                          <td>${response.data.email}</td>
+                          <td>
+                          <button type="button" class="btn btn-primary edit" data-url="${response.edit_url}">Edit</button>
+                          <button type="button" class="btn btn-danger delete" data-url="${response.edit_url}">Delete</button>
+                          </td>
+
+                        `;
+                        var $row = _this.closest("tr").html(_html);                        
+                    }
+
+                    if (response.errors) {
+                        var $error_sting = '';
+                        $.each(response.errors, function($index, $error) {
+                            $error_sting += '<p class="text-danger">'+$error+'</p>';
+                        });
+                        $("#row_response").html($error_sting);
                     }
                 }
             });
